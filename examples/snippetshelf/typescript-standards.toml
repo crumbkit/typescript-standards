@@ -1,0 +1,36 @@
+# The adoption map of snippetshelf, the example app in this repository. It
+# lists code snippets and shows one highlighted. A Rust program would embed
+# its committed bundle; this repository has no such program, so the EMB-5
+# binding names what that program's test would cover.
+
+schema = "typescript-standards/adoption/v1"
+standards = { version = "0.1.0", commit = "the commit of typescript-standards this map was reviewed against" }
+
+profiles = ["base", "app", "embedded"]
+
+[[binding]]
+rule = "BASE-7"
+owners = ["src/api/client.ts"]
+checks = ["Biome noRestrictedGlobals, with the override for this file in biome.jsonc"]
+note = "getJson is the only caller of fetch. snippetshelf uses no storage, so no storage owner exists."
+
+[[binding]]
+rule = "EMB-5"
+owners = ["dist/"]
+checks = ["none in this repository"]
+note = "An embedding program's test would request /, /assets/app.js, /assets/index.css and each lazily loaded chunk, and check each media type."
+
+[[decision]]
+id = "lanes"
+requirement = """
+- Lane: `lane` in .github/workflows/ci.yml, on each pull request and each push to main. It runs every step of the pull-request lane, plus bin/drift. Its budget is fifteen minutes, the job's timeout. A merge waits for it.
+- Lane: `advisories` in .github/workflows/ci.yml, daily at 06:43 UTC and on each push to main. Nothing waits for it.
+"""
+reason = "The pull-request lane stays fast. snippetshelf is never released, so an advisory found after merge only means a pull request that moves the affected pin."
+realizations = ["../../.github/workflows/ci.yml"]
+
+[[decision]]
+id = "budgets"
+requirement = "The first load, index.html with assets/app.js and assets/index.css, stays under 150 kB with Brotli. Every built file together stays under 250 kB, which covers Shiki's lazily loaded chunks."
+reason = "The first load holds React, the router, TanStack Query and zod. Shiki loads only when a snippet opens (APP-18)."
+realizations = ["package.json"]
