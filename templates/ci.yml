@@ -61,7 +61,7 @@ jobs:
         run: pnpm run test
       - name: build
         run: pnpm run build
-      # The project adopts `embedded` (EMB-3).
+      # Runs when the project adopts `embedded` (EMB-1).
       - name: bundle
         run: pnpm run bundle
       - name: size

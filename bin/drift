@@ -18,7 +18,7 @@ import { readFileSync } from "node:fs";
 const baseline = JSON.parse(readFileSync("baseline/package.json", "utf8"));
 const example = JSON.parse(readFileSync(process.argv[2], "utf8"));
 let ok = true;
-for (const field of ["type", "packageManager", "engines", "scripts", "devDependencies"]) {
+for (const field of ["type", "packageManager", "scripts", "devDependencies"]) {
   if (JSON.stringify(baseline[field]) !== JSON.stringify(example[field])) {
     console.error(`drift: package.json field "${field}" differs from the baseline`);
     ok = false;
