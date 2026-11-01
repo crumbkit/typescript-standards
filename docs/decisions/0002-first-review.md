@@ -32,5 +32,5 @@ not change.
 | Finding | Severity | Reason |
 | --- | --- | --- |
 | The one tsconfig gives `src/` Node's types, so `process` type-checks in browser code. | low | A second tsconfig for the configuration files and tests would turn `tsc` into `tsc -b` with project references, for a mistake that the build catches: Vite does not define `process` in the browser bundle, and the acceptance tests run the bundle. The tsconfig keeps `node` in `types` until a project hits the mistake; then the split replaces it. |
-| `BASELINE-READY` holds a local path and is not in the index. | low | The file was asked for, so that other work could start from the baseline before the prose was written. It is removed when the repository is first published. |
+| `BASELINE-READY` holds a local path and is not in the index. | low | The file was asked for, so that other work could start from the baseline before the prose was written. It was removed before the repository was first published. |
 | The example map's `commit` is placeholder text, and its version 0.1.0 does not exist. | low | rust-standards and swift-standards write their examples the same way. A real hash would be stale after the next commit, and 0.1.0 is the version the first tag will have. |
