@@ -1,0 +1,26 @@
+# Dependabot opens the weekly pull requests that move a project's pins
+# (BASE-13). Each ecosystem puts all its updates in one pull request. The
+# 7-day cooldown proposes a release only once it is 7 days old, which is also
+# the age pnpm requires before it installs one (BASE-14). Dependabot does not
+# read .node-version, so a person raises it, `engines.node` and the
+# `packageManager` pin together.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
