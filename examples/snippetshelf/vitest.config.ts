@@ -1,5 +1,5 @@
 import { defineConfig, mergeConfig } from "vitest/config";
-import vite from "./vite.config";
+import vite from "./vite.config.ts";
 
 // Unit and component tests run in jsdom (APP-6). Acceptance tests run in
 // real browsers through Playwright (APP-7) and are left out here.

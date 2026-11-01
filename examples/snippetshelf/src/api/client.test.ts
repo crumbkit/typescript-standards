@@ -30,6 +30,13 @@ describe("getJson", () => {
     });
   });
 
+  it("refuses a body that is not JSON", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("<html>")));
+    await expect(getJson("/api/thing", Thing, new AbortController().signal)).rejects.toMatchObject({
+      failure: { kind: "shape" },
+    });
+  });
+
   it("reports a request that never reached the server as a network failure", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     await expect(getJson("/api/thing", Thing, new AbortController().signal)).rejects.toMatchObject({

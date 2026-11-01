@@ -24,7 +24,7 @@ function serve(routes: Record<string, unknown>) {
 
 function renderApp(path = "/") {
   const queryClient = makeQueryClient();
-  const router = makeRouter(queryClient, createMemoryHistory({ initialEntries: [path] }));
+  const router = makeRouter(createMemoryHistory({ initialEntries: [path] }));
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
@@ -41,6 +41,32 @@ describe("the snippet list", () => {
 
     expect(await screen.findByRole("heading", { name: "Hello, world" })).toBeInTheDocument();
     expect(screen.getByText(/println!/)).toBeInTheDocument();
+  });
+
+  it("shows that it is loading while the server has not answered", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    renderApp();
+
+    expect(await screen.findByText("Loading snippets…")).toBeInTheDocument();
+  });
+
+  it("treats an address that names no valid snippet as a missing page", async () => {
+    serve({});
+    renderApp("/snippets/BAD!");
+
+    expect(await screen.findByText("This page does not exist.")).toBeInTheDocument();
+  });
+
+  it("asks the server only once when it refuses the request", async () => {
+    const refuse = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
+    vi.stubGlobal("fetch", refuse);
+    renderApp();
+
+    await screen.findByRole("alert");
+    expect(refuse).toHaveBeenCalledTimes(1);
   });
 
   it("says so when there are no snippets", async () => {

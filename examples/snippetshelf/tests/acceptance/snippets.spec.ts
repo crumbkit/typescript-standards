@@ -15,14 +15,27 @@ async function serveApi(page: Page) {
   await page.route("**/api/snippets/hello", (route) => route.fulfill({ json: hello }));
 }
 
+// Collects every error the page logs, including a Content-Security-Policy
+// violation, so a test can expect there are none.
+function consoleErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      errors.push(message.text());
+    }
+  });
+  return errors;
+}
+
 async function expectNoAccessibilityViolations(page: Page) {
   const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
   expect(results.violations).toEqual([]);
 }
 
 test("a person opens a snippet from the list and reads it highlighted", async ({ page }) => {
+  const errors = consoleErrors(page);
   await serveApi(page);
   await page.goto("/");
 
@@ -32,8 +45,13 @@ test("a person opens a snippet from the list and reads it highlighted", async ({
   await page.getByRole("link", { name: "Hello, world" }).click();
 
   await expect(page.getByRole("heading", { name: "Hello, world" })).toBeVisible();
-  await expect(page.locator("pre.shiki")).toContainText("println!");
+  const code = page.getByRole("region", { name: "Code of Hello, world" });
+  // Highlighted code has no role of its own, so Shiki's class shows that
+  // it ran (APP-7).
+  await expect(code.locator("pre.shiki")).toBeAttached();
+  await expect(code).toContainText("println!");
   await expectNoAccessibilityViolations(page);
+  expect(errors).toEqual([]);
 });
 
 test("a snippet that does not exist says so", async ({ page }) => {

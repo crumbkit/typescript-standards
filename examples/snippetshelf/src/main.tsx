@@ -12,7 +12,7 @@ if (element === null) {
 }
 
 const queryClient = makeQueryClient();
-const router = makeRouter(queryClient);
+const router = makeRouter();
 
 createRoot(element).render(
   <StrictMode>

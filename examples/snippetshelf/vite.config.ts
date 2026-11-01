@@ -28,4 +28,7 @@ export default defineConfig({
   },
   // `pnpm dev` sends API requests to the program that serves them (EMB-6).
   server: { proxy: { "/api": "http://localhost:8080" } },
+  // The acceptance tests run against `vite preview`, so it sends the
+  // Content-Security-Policy that the embedding program sends (EMB-6).
+  preview: { headers: { "Content-Security-Policy": "default-src 'self'" } },
 });

@@ -31,7 +31,7 @@ names and the pnpm that `packageManager` names:
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run format && pnpm run lint && pnpm run typecheck && pnpm run knip
+pnpm run lint && pnpm run typecheck && pnpm run knip
 pnpm run test && pnpm run build && pnpm run bundle && pnpm run size
 pnpm run acceptance
 ../../bin/drift

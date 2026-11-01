@@ -5,8 +5,7 @@
   "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "vite",
-    "format": "biome format .",
-    "lint": "biome lint --error-on-warnings .",
+    "lint": "biome ci --error-on-warnings .",
     "fix": "biome check --write .",
     "typecheck": "tsc",
     "knip": "knip",

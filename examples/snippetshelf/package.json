@@ -5,8 +5,7 @@
   "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "vite",
-    "format": "biome format .",
-    "lint": "biome lint --error-on-warnings .",
+    "lint": "biome ci --error-on-warnings .",
     "fix": "biome check --write .",
     "typecheck": "tsc",
     "knip": "knip",
@@ -21,6 +20,7 @@
     "@tanstack/react-router": "1.170.46",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
+    "hast-util-to-jsx-runtime": "2.3.6",
     "lucide-react": "1.61.0",
     "radix-ui": "1.8.1",
     "react": "19.3.1",

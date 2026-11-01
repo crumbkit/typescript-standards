@@ -1,28 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
+import { toJsxRuntime } from "hast-util-to-jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import type { Language } from "@/api/snippets";
 
-type Props = { code: string; language: Language };
+type Props = { code: string; language: Language; label: string };
 
-/** Shows code as plain text at once, and highlighted once Shiki has loaded. */
-export function CodeBlock({ code, language }: Props) {
+/**
+ * Shows code as plain text at once, and highlighted once Shiki has loaded.
+ * Highlighting is local work, not server data, so its query lives here
+ * rather than in src/api/ (APP-10).
+ */
+export function CodeBlock({ code, language, label }: Props) {
   const highlighted = useQuery({
     queryKey: ["highlight", language, code],
     queryFn: async () => (await import("@/highlight")).highlight(code, language),
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  if (highlighted.data === undefined) {
-    return (
-      <pre className="bg-muted overflow-x-auto rounded-md p-4 text-sm">
-        <code>{code}</code>
-      </pre>
-    );
-  }
   return (
-    <div
-      className="overflow-x-auto rounded-md text-sm [&_pre]:p-4"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki escapes the code it highlights, and the HTML comes from Shiki alone.
-      dangerouslySetInnerHTML={{ __html: highlighted.data }}
-    />
+    <section aria-label={label} className="overflow-x-auto rounded-md text-sm [&_pre]:p-4">
+      {highlighted.data === undefined ? (
+        <pre className="bg-muted">
+          <code>{code}</code>
+        </pre>
+      ) : (
+        toJsxRuntime(highlighted.data, { Fragment, jsx, jsxs })
+      )}
+    </section>
   );
 }

@@ -25,7 +25,11 @@ export function SnippetDetail({ id }: Props) {
     body = (
       <>
         <h2 className="text-xl font-semibold">{snippet.data.title}</h2>
-        <CodeBlock code={snippet.data.code} language={snippet.data.language} />
+        <CodeBlock
+          code={snippet.data.code}
+          language={snippet.data.language}
+          label={`Code of ${snippet.data.title}`}
+        />
       </>
     );
   }

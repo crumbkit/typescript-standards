@@ -55,8 +55,6 @@ jobs:
         run: ../../bin/drift
       - name: install
         run: pnpm install --frozen-lockfile
-      - name: format
-        run: pnpm run format
       - name: lint
         run: pnpm run lint
       - name: typecheck

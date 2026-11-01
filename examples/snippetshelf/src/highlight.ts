@@ -16,10 +16,14 @@ function load(): Promise<HighlighterCore> {
   return highlighter;
 }
 
-/** The code as HTML, with both themes' colours as variables on each token. Shiki escapes the code. */
-export async function highlight(code: string, language: Language): Promise<string> {
+/**
+ * The code as a HTML syntax tree, with both themes' colours as CSS variables
+ * on each token. React renders the tree, so no HTML string reaches the page
+ * and the Content-Security-Policy needs no inline styles (EMB-6).
+ */
+export async function highlight(code: string, language: Language) {
   const loaded = await load();
-  return loaded.codeToHtml(code, {
+  return loaded.codeToHast(code, {
     lang: language,
     themes: { light: "github-light", dark: "github-dark" },
     defaultColor: false,
