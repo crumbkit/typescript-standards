@@ -20,8 +20,8 @@ pinned Node.
 
 ## Biome, not ESLint with typescript-eslint and Prettier
 
-The brief asked for ESLint's type-checked rules or Biome. Biome is the
-choice, for three reasons:
+The candidates were ESLint with typescript-eslint's type-checked rules and
+Prettier, and Biome. Biome is the choice, for three reasons:
 
 - typescript-eslint 8.72.1 supports TypeScript below 6.1, and TypeScript
   7.0.2 exports no stable compiler API for it to use. ESLint's type-checked
@@ -46,13 +46,13 @@ typescript-eslint can check them against TypeScript 7.
 
 ## TanStack Router, with routes defined in code
 
-The brief left the router open. TanStack Router is the default for an app
-with more than one screen, because it types each path and search parameter
-from the route definitions, so `tsc` rejects a link to a route that does not
-exist. Its loaders prefetch through the same `QueryClient` the screens read
-from, and it accepts zod schemas for search parameters. React Router is the
-common alternative, and it types route parameters only in its framework
-mode, through generated types.
+TanStack Router is the default for an app with more than one screen, because
+it types each path and search parameter from the route definitions, so `tsc`
+rejects a link to a route that does not exist. It accepts zod schemas for
+path and search parameters. The standard leaves its loaders unused (APP-15),
+so TanStack Query alone fetches. React Router is the common alternative, and
+it types route parameters only in its framework mode, through generated
+types.
 
 Routes are defined in code in one file. File-based routing would add
 TanStack's Vite plugin and a generated `routeTree.gen.ts` that every change
@@ -91,37 +91,37 @@ out of the baseline because it adds Babel to every build, and APP-16 already
 forbids memoisation that no measurement asks for. A project that measures a
 slow render may add it as a decision in its map.
 
-## Where the standard differs from board's UI
+## Where the standard differs from an existing embedded app
 
-board's `ui/` package is the existing React app these rules were checked
-against. The standard keeps its choices of pnpm 12, React 19, Vite 8,
+The rules were checked against an existing React app whose bundle a Rust
+binary embeds. The standard keeps its choices of pnpm 12, React 19, Vite 8,
 Tailwind 4 with tokens in one stylesheet that switch under
 `prefers-color-scheme`, a committed `dist/` with fixed file names that a
 Rust binary embeds with `include_bytes!`, and a lint step that fails when a
 build changes the committed bundle. EMB-1 to EMB-3 come from that setup. It
 differs in these places:
 
-- board's UI uses TypeScript 6.0.3 and a tsconfig with `strict` alone. The
+- The existing app uses TypeScript 6.0.3 and a tsconfig with `strict` alone. The
   standard uses TypeScript 7.0.2 and adds `noUncheckedIndexedAccess`,
   `exactOptionalPropertyTypes`, `verbatimModuleSyntax` and
   `erasableSyntaxOnly` (BASE-1).
-- board's UI has no lint or format step. The standard adds Biome (BASE-2,
+- The existing app has no lint or format step. The standard adds Biome (BASE-2,
   BASE-10).
-- board's UI casts response bodies with `as`. The standard parses them with
+- The existing app casts response bodies with `as`. The standard parses them with
   zod at the boundary (BASE-21) and forbids the cast (BASE-3).
-- board's UI runs every test in Chromium through Vitest's browser mode, and
+- The existing app runs every test in Chromium through Vitest's browser mode, and
   compares Storybook stories with golden screenshots inside a pinned
   Playwright container. The standard runs component tests in jsdom and
   acceptance tests through Playwright, and makes Storybook and screenshot
   goldens optional. Golden screenshots differ between platforms, which is
-  why board pins an arm64 container; a small app gets most of their value
+  why the existing app pins an arm64 container; a small app gets most of their value
   from axe and role-based assertions in both appearances, without the
   container.
-- board's UI builds inside a Docker container so that its screenshots match.
+- The existing app builds inside a Docker container so that its screenshots match.
   The standard builds with the pinned Node and pnpm on the host, and EMB-4
   makes the bundle the same on every machine. The example's bundle was
   built on macOS and in a Linux container from the same commit, and the two
   builds wrote identical bytes.
-- board's UI does not restrict Tailwind's source detection. The standard
+- The existing app does not restrict Tailwind's source detection. The standard
   does (EMB-4), because the example's stylesheet changed when an unrelated
   file in the app changed.

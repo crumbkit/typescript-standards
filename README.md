@@ -51,9 +51,13 @@ bin/drift                      checks that the example uses the baseline unchang
 - A project adopts `base` and every other profile that describes it.
 - A project ignores the rules of a profile it does not adopt.
 - A project may use a baseline file or setting from a profile it does not
-  adopt. Using the file adopts none of that profile's rules. A project that
-  does not adopt `embedded` deletes the `rolldownOptions` block from
-  `vite.config.ts`, as the comment there says, and the `bundle` script.
+  adopt. Using the file adopts none of that profile's rules.
+- A project that does not adopt `embedded` makes four changes to the
+  baseline. It deletes the `rolldownOptions` block from `vite.config.ts`, so
+  Vite puts a content hash in each file name. It changes the first-load
+  paths in the `size-limit` field to `dist/assets/index-*.js` and
+  `dist/assets/index-*.css`, which match the hashed names. It replaces
+  `!dist/` with `dist/` in `.gitignore`, and deletes the `bundle` script.
 
 ## Pull-request lane
 
@@ -70,8 +74,7 @@ install. A project may split the steps across parallel jobs instead.
 | --- | --- | --- |
 | `workflows` | `zizmor .` | the project has `.github/workflows/` |
 | `install` | `pnpm install --frozen-lockfile` | always |
-| `format` | `biome format .` | always |
-| `lint` | `biome lint --error-on-warnings .` | always |
+| `lint` | `biome ci --error-on-warnings .`, which checks formatting, import order and lint | always |
 | `typecheck` | `tsc` | always |
 | `knip` | `knip` | always |
 | `test` | `vitest run` | always |
@@ -82,7 +85,7 @@ install. A project may split the steps across parallel jobs instead.
 
 [templates/ci.yml](templates/ci.yml) runs these steps in this order. Before
 a push, a person or agent runs `pnpm run fix`, which formats the code and
-applies Biome's safe fixes, and then the steps from `format` on.
+applies Biome's safe fixes, and then the steps from `lint` on.
 
 ## Scheduled and release checks
 
@@ -157,7 +160,8 @@ together.
 | zod | 4.6.7 | radix-ui | 1.8.1 |
 | cn | 0.5.0 | class-variance-authority | 0.7.1 |
 | lucide-react | 1.61.0 | shadcn (CLI) | 4.22.1 |
-| shiki | 4.5.0 | @observablehq/plot | 0.6.17 |
+| shiki | 4.5.0 | hast-util-to-jsx-runtime | 2.3.6 |
+| @observablehq/plot | 0.6.17 | | |
 | vitest | 5.0.5 | jsdom | 30.1.3 |
 | @testing-library/react | 16.3.3 | @testing-library/dom | 10.4.2 |
 | @testing-library/user-event | 14.6.8 | @testing-library/jest-dom | 7.0.1 |
@@ -166,9 +170,9 @@ together.
 | @types/node | 26.6.5 | zizmor | 1.31.1 |
 
 Each version was the newest release at least 7 days old on 2026-11-01, so
-that pnpm's release-age setting (BASE-14) installs it. Shiki and Observable
-Plot are not in the baseline's `package.json`, and a project adds the one it
-uses at the version above.
+that pnpm's release-age setting (BASE-14) installs it. Shiki, hast-util-to-jsx-runtime and
+Observable Plot are not in the baseline's `package.json`, and a project adds
+the ones it uses at the versions above.
 
 ## Versions
 
