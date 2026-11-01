@@ -1,0 +1,113 @@
+# The repository's own lane: templates/ci.yml run against the example app,
+# plus the drift check of the example against the baseline.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "43 6 * * *"
+  workflow_dispatch:
+
+# Each job grants only the permissions it needs.
+permissions: {}
+
+# A new push cancels the run for the previous push, because the newer run
+# checks the same changes and more.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Every run step works in the example app, which uses the baseline unchanged.
+defaults:
+  run:
+    working-directory: examples/snippetshelf
+
+jobs:
+  lane:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    # The pull-request lane's time budget (BASE-16).
+    timeout-minutes: 15
+    permissions:
+      contents: read # actions/checkout reads the repository.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # pnpm/action-setup installs the pnpm that `packageManager` names, and
+      # setup-node the Node that .node-version names (BASE-13). setup-node
+      # caches pnpm's store, keyed by the lockfile.
+      - uses: pnpm/action-setup@d9184bf108216479bc5a137cc391f4d7b14c870b # v6.1.0
+        with:
+          package_json_file: examples/snippetshelf/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: examples/snippetshelf/.node-version
+          cache: pnpm
+          cache-dependency-path: examples/snippetshelf/pnpm-lock.yaml
+      # The step that reads only the workflows runs before any install, so a
+      # pull request that fails it fails in seconds.
+      - name: workflows
+        run: pipx run zizmor==1.31.1 ../..
+      - name: drift
+        run: ../../bin/drift
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: format
+        run: pnpm run format
+      - name: lint
+        run: pnpm run lint
+      - name: typecheck
+        run: pnpm run typecheck
+      - name: knip
+        run: pnpm run knip
+      - name: test
+        run: pnpm run test
+      - name: build
+        run: pnpm run build
+      # The project adopts `embedded` (EMB-3).
+      - name: bundle
+        run: pnpm run bundle
+      - name: size
+        run: pnpm run size
+      # The browsers are cached by Playwright's version, which the lockfile
+      # fixes. The system libraries they need are installed on every run.
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: acceptance
+        run: pnpm run acceptance
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-traces
+          path: examples/snippetshelf/test-results/
+          retention-days: 7
+
+  advisories:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read # actions/checkout reads the repository.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@d9184bf108216479bc5a137cc391f4d7b14c870b # v6.1.0
+        with:
+          package_json_file: examples/snippetshelf/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: examples/snippetshelf/.node-version
+      # pnpm audit reads the lockfile and asks the npm registry for advisories
+      # against every package in it (BASE-17).
+      - name: advisories
+        run: pnpm audit

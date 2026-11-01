@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Checks that the example app uses the baseline unchanged. Each baseline file
+# must match the example's copy byte for byte, except package.json, whose
+# name and app-specific entries differ. Of package.json it compares the
+# fields that the baseline fixes.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+example=examples/snippetshelf
+status=0
+for file in $(cd baseline && git ls-files --cached --others --exclude-standard . | grep -v '^package.json$'); do
+  if ! cmp -s "baseline/$file" "$example/$file"; then
+    echo "drift: $example/$file differs from baseline/$file" >&2
+    status=1
+  fi
+done
+node --input-type=module - "$example/package.json" <<'JS' || status=1
+import { readFileSync } from "node:fs";
+const baseline = JSON.parse(readFileSync("baseline/package.json", "utf8"));
+const example = JSON.parse(readFileSync(process.argv[2], "utf8"));
+let ok = true;
+for (const field of ["type", "packageManager", "engines", "scripts", "devDependencies"]) {
+  if (JSON.stringify(baseline[field]) !== JSON.stringify(example[field])) {
+    console.error(`drift: package.json field "${field}" differs from the baseline`);
+    ok = false;
+  }
+}
+// Each runtime dependency the example shares with the baseline has its pin.
+for (const [name, version] of Object.entries(example.dependencies)) {
+  const pinned = baseline.dependencies[name];
+  if (pinned !== undefined && pinned !== version) {
+    console.error(`drift: ${name} is ${version} in the example and ${pinned} in the baseline`);
+    ok = false;
+  }
+}
+process.exit(ok ? 0 : 1);
+JS
+exit "$status"
