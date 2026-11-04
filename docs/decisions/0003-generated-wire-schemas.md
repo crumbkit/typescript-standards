@@ -1,8 +1,9 @@
 # 0003: Generated schemas for wire types that another program owns
 
-Decided 2026-11-04. BASE-21 makes a zod schema the one home of each type.
-This record says why a project may generate that schema when another
-program owns the type.
+Decided 2026-11-04. BASE-21 gives every type one zod schema and names two
+ways to write it. This record says why a wire type that another program
+owns gets a generated schema, while every other type keeps a hand-written
+one.
 
 ## The problem
 
