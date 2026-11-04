@@ -66,6 +66,11 @@ except `workflows` and `install` is a script in `package.json`, so CI and a
 person or agent at a terminal run it by the same name, such as
 `pnpm run lint`.
 
+The baseline has no `schemas` script, because the generator depends on the
+program that owns the wire types. A project that commits generated schemas
+(BASE-21) adds a `schemas` script that runs its generator and then fails
+when `git status` reports a change under `src/api/generated/`.
+
 Within one job the steps run cheapest first, so a pull request fails as early
 as it can. `workflows` reads only the workflow files and runs before the
 install. A project may split the steps across parallel jobs instead.
@@ -74,6 +79,7 @@ install. A project may split the steps across parallel jobs instead.
 | --- | --- | --- |
 | `workflows` | `zizmor .` | the project has `.github/workflows/` |
 | `install` | `pnpm install --frozen-lockfile` | always |
+| `schemas` | the project's generator, then a `git status` that must report nothing under `src/api/generated/` | the project commits generated schemas (BASE-21) |
 | `lint` | `biome ci --error-on-warnings .`, which checks formatting, import order and lint | always |
 | `typecheck` | `tsc` | always |
 | `knip` | `knip` | always |

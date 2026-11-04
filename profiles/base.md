@@ -7,7 +7,7 @@ Every project follows these rules.
 | ID | Rule | Check |
 | --- | --- | --- |
 | BASE-1 | Every project type-checks with [baseline/tsconfig.json](../baseline/tsconfig.json). It turns on `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `erasableSyntaxOnly` and `isolatedModules`. A project may add options. Removing or weakening one is an exception in the map. | `tsc` |
-| BASE-2 | Every project lints with [baseline/biome.jsonc](../baseline/biome.jsonc), and CI fails on any warning. Suppress a finding only with `// biome-ignore lint/<group>/<rule>: <reason>` on the smallest node that needs it. A rule turned off in the configuration is an exception in the map, except the two overrides the baseline carries. | `biome ci --error-on-warnings .` |
+| BASE-2 | Every project lints with [baseline/biome.jsonc](../baseline/biome.jsonc), and CI fails on any warning. Suppress a finding only with `// biome-ignore lint/<group>/<rule>: <reason>` on the smallest node that needs it. A rule turned off in the configuration is an exception in the map, except the overrides the baseline carries. | `biome ci --error-on-warnings .` |
 | BASE-3 | Write no `any`, no type assertion other than `as const`, no non-null assertion `!` and no `@ts-ignore`. Code narrows a value with a check, a type predicate or a schema parse (BASE-21). A test may use `@ts-expect-error` with a comment that says what it expects. | `noExplicitAny`, `noUnsafeTypeAssertion`, `noNonNullAssertion`, `noTsIgnore` |
 | BASE-4 | Write only TypeScript whose types can be erased: no `enum`, no `namespace` and no constructor parameter properties. A closed set of values is a union of string literals, or a zod enum (BASE-21). | `erasableSyntaxOnly`, `noEnum`, `noNamespace` |
 | BASE-5 | Handle every promise. Code awaits it, returns it, or marks it with `void` where nothing waits for the result, such as an event handler that starts a refetch. A promise never stands where a boolean or a callback returning `void` is expected. | `noFloatingPromises`, `noMisusedPromises` |
@@ -21,7 +21,7 @@ Every project follows these rules.
 | ID | Rule | Check |
 | --- | --- | --- |
 | BASE-10 | Format every file and order every file's imports with Biome and the baseline's settings. | `biome ci --error-on-warnings .`, which checks formatting and import order as well as lint |
-| BASE-11 | Every declared dependency is used, every file is reachable from an entry point, and every export is either imported by another file or used in its own file. | `knip` |
+| BASE-11 | Every declared dependency is used, every file is reachable from an entry point, and every export is either imported by another file or used in its own file. A generated schema file (BASE-21) may export schemas that nothing imports, because its generator writes one for every type in the other program's schema. | `knip` |
 
 ## drift
 
@@ -30,7 +30,7 @@ Every project follows these rules.
 | BASE-12 | A test runner never retries a failed test, and a focused or skipped test fails the lane. Vitest sets `retry: 0`. Playwright sets `retries: 0` and `forbidOnly: true`. | drift on [baseline/vitest.config.ts](../baseline/vitest.config.ts) and [baseline/playwright.config.ts](../baseline/playwright.config.ts); `noFocusedTests`, `noSkippedTests` |
 | BASE-13 | Pin every build input. `.node-version` names an exact Node LTS release, and it is the one place the Node version is written. `packageManager` names an exact pnpm version. Every entry in `dependencies` and `devDependencies` is an exact version, and `savePrefix: ""` makes `pnpm add` write one. `pnpm-lock.yaml` is committed, and CI installs with `--frozen-lockfile`. CI installs each tool at a stated version and pins each GitHub Action to a commit. Dependabot opens a pull request each week that moves these pins. | drift for the files, review for the rest |
 | BASE-14 | `pnpm-workspace.yaml` sets `minimumReleaseAge: 10080`, so pnpm installs no release younger than 7 days. `allowBuilds` lists every package that may run an install script, and the pull request that adds one says why it needs to. | drift on [baseline/pnpm-workspace.yaml](../baseline/pnpm-workspace.yaml); review for each `allowBuilds` entry |
-| BASE-15 | A production `.ts` or `.tsx` file has at most 1,000 lines, counting every line. A file over the limit is split by responsibility, or listed as an exception in the map with a correction. Test files have no limit. | drift |
+| BASE-15 | A production `.ts` or `.tsx` file has at most 1,000 lines, counting every line. A file over the limit is split by responsibility, or listed as an exception in the map with a correction. Test files and generated schemas (BASE-21) have no limit. | drift |
 | BASE-16 | The pull-request lane runs the steps in [README.md](../README.md#pull-request-lane) within a time budget that the map's `lanes` decision states. A check that does not fit the budget runs in another lane that the decision also records. | drift for the decision, review for its content |
 
 ## release
@@ -46,7 +46,7 @@ Every project follows these rules.
 | BASE-18 | Write the test first. A change starts with a test that fails for want of the behaviour, and a bug fix starts with a test that reproduces the bug. When no automated test can show the change, such as a change of spacing, the pull request says how it was checked, for example with screenshots in light and dark. |
 | BASE-19 | Choose the simplest design that works. It keeps every existing feature and its fidelity, and has the fewest types, files and moving parts. Add code only when removing code cannot make the change. Add an abstraction only when it removes two copies or another rule needs it. |
 | BASE-20 | Compose small types. Give each domain meaning one type with one validation rule, and build larger values from those types. An identifier is a branded type, such as `z.string().brand<"SnippetId">()`, so two kinds of identifier cannot be swapped. Do not build one large object type whose many optional fields only some callers fill. |
-| BASE-21 | Parse input into its type once, where it enters the program: a response body, a route parameter, a search parameter, storage or a message. The zod schema is the type's one home, and the type is `z.infer<typeof Schema>`. Every function inside the program takes the parsed type, and the raw value appears only where the value leaves the program. |
+| BASE-21 | Parse input into its type once, where it enters the program: a response body, a route parameter, a search parameter, storage or a message. The zod schema is the type's one home, and the type is `z.infer<typeof Schema>`. Every function inside the program takes the parsed type, and the raw value appears only where the value leaves the program. When another program owns a wire type, such as a server that publishes an OpenAPI document, a generator writes the type's zod schema from that program's schema, and the project commits the output in `src/api/generated/`. Each generated file starts with a comment that names its generator and its source and says that the file is generated. Nobody edits a generated file by hand. The `schemas` step of the pull-request lane regenerates the files and fails when they differ from the committed ones. The type is still `z.infer` of the generated schema. A module outside `src/api/generated/` may build on a generated schema, for example to brand an identifier (BASE-20). A shape that exists only in the UI, such as a form, stays a hand-written schema outside `src/api/generated/`. |
 | BASE-22 | A type admits only the states the code handles. Where booleans and optional fields can combine into a state the code cannot handle, use a discriminated union with one member per state that carries that state's data. |
 | BASE-23 | Make each outcome the domain expects, such as a refusal or an empty result, a member of the operation's result union. Throw only for technical failures outside the domain's outcomes, such as an unreachable server or a malformed answer. A TanStack Query `queryFn` or `mutationFn` is the exception: it throws a typed error for every failure, including a refused request, because the library takes a thrown error as the query's failure and retries on it (APP-12). Throw only `Error` subclasses. An error that wraps another passes it as `cause` and does not copy it into its message. Code either reports an error or throws it, never both. |
 | BASE-24 | Write unit tests with Vitest and name each test with a sentence that states the behaviour it checks. A test owns everything it touches. It never reaches the network: it stubs `fetch` with `vi.stubGlobal`, and Vitest's `unstubGlobals` removes the stub after the test. A test that involves time uses `vi.useFakeTimers()` and never compares elapsed time with an upper bound. |
@@ -91,6 +91,13 @@ Every project follows these rules.
   is the advisory check. An advisory can be published after a dependency is
   locked, so a check on pull requests alone misses advisories against code
   already on main.
+- BASE-21: A schema copied by hand from another program's types drifts
+  from them, and the app then rejects a valid answer or accepts a wrong one
+  until a person notices. A generated schema follows the owner's published
+  schema, and the `schemas` step fails when someone changes the published
+  schema and forgets to regenerate. Generated
+  code is neither formatted nor linted (BASE-2, BASE-10), because the next
+  regeneration would undo any fix, but `tsc` still checks it (BASE-1).
 - BASE-22 follows Yaron Minsky's principle "make illegal states
   unrepresentable" ("Effective ML Revisited", 2011). TypeScript narrows a
   discriminated union on its tag, and BASE-6 makes a `switch` on the tag

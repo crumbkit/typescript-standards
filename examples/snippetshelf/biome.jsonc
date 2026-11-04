@@ -91,6 +91,15 @@
       "linter": { "rules": { "nursery": { "noTailwindArbitraryValue": "off" } } }
     },
     {
+      // A generator writes these files from another program's schema
+      // (BASE-21). The next regeneration would undo any format or lint fix,
+      // so Biome leaves them alone, and tsc still checks them.
+      "includes": ["src/api/generated/**"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false },
+      "assist": { "enabled": false }
+    },
+    {
       "includes": ["src/api/client.ts"],
       "linter": { "rules": { "style": { "noRestrictedGlobals": "off" } } }
     }
