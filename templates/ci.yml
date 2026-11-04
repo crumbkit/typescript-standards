@@ -49,6 +49,11 @@ jobs:
         run: pipx run zizmor==1.31.1 .
       - name: install
         run: pnpm install --frozen-lockfile
+      # Runs when the project commits generated schemas (BASE-21). The
+      # project's `schemas` script regenerates src/api/generated/ and fails
+      # when the output differs from the committed files.
+      - name: schemas
+        run: pnpm run schemas
       - name: lint
         run: pnpm run lint
       - name: typecheck
