@@ -59,6 +59,7 @@ Every project follows these rules.
 | BASE-31 | A new CI check names the failure it catches, why existing checks miss it, its lane and its cost. Prefer a type or compiler check to a text scan. |
 | BASE-32 | Use a standard format or a maintained tool before writing a new one. |
 | BASE-33 | Spell names out. Use an abbreviation only when it is common outside the project, such as `id`, `url` or `http`. A file is named after what it exports: a component file `SnippetList.tsx`, any other module in lower camel case, such as `queryClient.ts`. |
+| BASE-34 | **Every limit has an overflow.** A design constrains growth and accommodates it, and restricts growth wherever it can. Each limit names the ordered steps that give growth a place to go, each under its own looser limit: a document past its word budget splits into a tree of topic documents with a node cap; a slow job moves to a slower lane with a time cap; code past a size or complexity limit splits into modules or crates. Switching the limit off is never a step. The last step is always the owner's recorded decision to change or retire the limit. |
 
 ## Reasons
 
