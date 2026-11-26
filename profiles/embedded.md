@@ -6,29 +6,29 @@ program builds without Node.
 
 ## tool
 
-| ID | Rule | Check |
-| --- | --- | --- |
-| EMB-1 | A build of the committed source leaves the committed bundle unchanged. The `bundle` step runs after `build` and fails when git reports any changed, deleted, untracked or ignored file under `dist/`. The pull request that changes the app commits the rebuilt bundle in the same commit as the change. Dependabot does not rebuild the bundle, so a person or agent runs `pnpm run build` on each Dependabot branch that changes a runtime dependency and commits `dist/` there. | the `bundle` step |
+| ID | Rule | Check | Where it applies |
+| --- | --- | --- | --- |
+| EMB-1 | A build of the committed source leaves the committed bundle unchanged. The `bundle` step runs after `build` and fails when git reports any changed, deleted, untracked or ignored file under `dist/`. The pull request that changes the app commits the rebuilt bundle in the same commit as the change. Dependabot does not rebuild the bundle, so a person or agent runs `pnpm run build` on each Dependabot branch that changes a runtime dependency and commits `dist/` there. | the `bundle` step | `**` |
 
 ## drift
 
-| ID | Rule | Check |
-| --- | --- | --- |
-| EMB-2 | The build writes fixed file names: `assets/app.js` for the entry, `assets/<name>.js` for each lazily loaded chunk and `assets/<name>.<ext>` for every other file, as [baseline/vite.config.ts](../baseline/vite.config.ts) sets. | drift |
-| EMB-3 | Commit `dist/`, and un-ignore it with `!dist/` in the app's `.gitignore`, so a global ignore of `dist` cannot hide it. The build writes no source maps. | drift |
-| EMB-4 | The bundle depends only on the committed source, the lockfile and the pinned Node and pnpm (BASE-13). Tailwind reads class names only from `src/`, through `@import "tailwindcss" source("./")` in `src/index.css`. The build reads no clock, environment variable or git state, so it writes the same bytes on every machine. | drift for the import, review for the rest |
+| ID | Rule | Check | Where it applies |
+| --- | --- | --- | --- |
+| EMB-2 | The build writes fixed file names: `assets/app.js` for the entry, `assets/<name>.js` for each lazily loaded chunk and `assets/<name>.<ext>` for every other file, as [baseline/vite.config.ts](../baseline/vite.config.ts) sets. | drift | `**/vite.config.*`, `**/dist/**` |
+| EMB-3 | Commit `dist/`, and un-ignore it with `!dist/` in the app's `.gitignore`, so a global ignore of `dist` cannot hide it. The build writes no source maps. | drift | `**/.gitignore`, `**/dist/**`, `**/vite.config.*` |
+| EMB-4 | The bundle depends only on the committed source, the lockfile and the pinned Node and pnpm (BASE-13). Tailwind reads class names only from `src/`, through `@import "tailwindcss" source("./")` in `src/index.css`. The build reads no clock, environment variable or git state, so it writes the same bytes on every machine. | drift for the import, review for the rest | `**/src/index.css`, `**/vite.config.*`, `**/package.json`, `**/pnpm-lock.yaml`, `**/.node-version` |
 
 ## test
 
-| ID | Rule | Check |
-| --- | --- | --- |
-| EMB-5 | The program embeds the bundle from the committed files at compile time, for example with `include_bytes!` for each fixed name or `include_dir!` for the whole directory, and its build never runs Node or pnpm. A test in the program checks that every file under `dist/` is served, with the right media type, so a new chunk that the program does not embed fails the test. When the program is published as a crate, the crate's `include` list contains `dist/`. | a test in the program |
+| ID | Rule | Check | Where it applies |
+| --- | --- | --- | --- |
+| EMB-5 | The program embeds the bundle from the committed files at compile time, for example with `include_bytes!` for each fixed name or `include_dir!` for the whole directory, and its build never runs Node or pnpm. A test in the program checks that every file under `dist/` is served, with the right media type, so a new chunk that the program does not embed fails the test. When the program is published as a crate, the crate's `include` list contains `dist/`. | a test in the program | `**` |
 
 ## review
 
-| ID | Rule |
-| --- | --- |
-| EMB-6 | The app is one page at `/`. It routes with hash history (`createHashHistory`), so the program serves only the bundle's files and answers no other path with the page. The app reaches its API at relative paths under `/api/`, on the origin that served the page, and `pnpm dev` proxies `/api` to a locally running program through Vite's `server.proxy`. The program serves the bundle's files with `Cache-Control: no-cache`, because their names do not change between versions, and with a `Content-Security-Policy` of at least `default-src 'self'`. `vite preview` sends the same policy, through `preview.headers` in [baseline/vite.config.ts](../baseline/vite.config.ts), so the acceptance tests run under it (APP-7). zod runs with `z.config({ jitless: true })`, because its check for `new Function` is a violation of that policy. Observable Plot writes `style` attributes into its markup, so an app that draws charts adds `style-src 'self' 'unsafe-inline'`. |
+| ID | Rule | Where it applies |
+| --- | --- | --- |
+| EMB-6 | The app is one page at `/`. It routes with hash history (`createHashHistory`), so the program serves only the bundle's files and answers no other path with the page. The app reaches its API at relative paths under `/api/`, on the origin that served the page, and `pnpm dev` proxies `/api` to a locally running program through Vite's `server.proxy`. The program serves the bundle's files with `Cache-Control: no-cache`, because their names do not change between versions, and with a `Content-Security-Policy` of at least `default-src 'self'`. `vite preview` sends the same policy, through `preview.headers` in [baseline/vite.config.ts](../baseline/vite.config.ts), so the acceptance tests run under it (APP-7). zod runs with `z.config({ jitless: true })`, because its check for `new Function` is a violation of that policy. Observable Plot writes `style` attributes into its markup, so an app that draws charts adds `style-src 'self' 'unsafe-inline'`. | `**` |
 
 ## Reasons
 

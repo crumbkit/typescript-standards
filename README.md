@@ -17,7 +17,7 @@ plan, say the same thing in all three.
 ## Index
 
 ```text
-README.md                      profiles, lanes, check tiers, toolchain, versions
+README.md                      profiles, lanes, check tiers, rule globs, toolchain, versions
 AGENTS.md                      rules for editing this repository
 adoption.md                    the typescript-standards.toml format
 profiles/
@@ -121,6 +121,33 @@ Every rule names its check. The tiers run from cheapest to most expensive.
   baseline. No drift check for adopting projects ships yet. Until one does,
   a reviewer checks each `drift` rule against the project's files. The rules
   are written so that a script can check them.
+
+## Where a rule applies
+
+Every rule table ends with a "Where it applies" column. It lists glob
+patterns, each in inline code, for the files whose changes the rule
+concerns. Every tier carries the column, because an audit against these
+standards reads every rule, and an audit tool reads a rule only from a table
+that has the column.
+
+A pattern is relative to the project's root. `**` alone matches every file.
+`**/` matches any number of directories, including none. A trailing `/**`,
+as in `.github/workflows/**`, matches every file under that directory at any
+depth. `*` matches any characters within one path segment. A set such as
+`[Jj]` matches one of the characters it lists, and a set may hold a range
+such as `[a-z]`. A set is never negated, with `[!...]` or `[^...]`, because
+tools disagree on which form negates: SQLite's `GLOB` reads `[^...]` as a
+negation and `[!...]` as a literal set, while shells and gitignore negate
+with `[!...]`. The column uses only `*`, `**`, sets and literal characters;
+`?` and `{...}` do not appear in it, so each extension gets its own pattern.
+
+- A tool may read a pattern more widely, and never more narrowly.
+- A pattern may cover more files than the rule concerns, and never fewer. A
+  rule whose reach is unclear applies to `**`.
+- A rule that JavaScript code can break lists the JavaScript extensions
+  too, so a JavaScript file in a project is held to the same rule. A rule
+  about the project's setup names `**/package.json`, so a project without
+  the file that the rule requires fails the rule instead of passing it.
 
 ## Toolchain facts
 
