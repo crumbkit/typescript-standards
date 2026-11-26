@@ -144,8 +144,8 @@ with `[!...]`. The column uses only `*`, `**`, sets and literal characters;
 - A tool may read a pattern more widely, and never more narrowly.
 - A pattern may cover more files than the rule concerns, and never fewer. A
   rule whose reach is unclear applies to `**`.
-- A rule about code lists the JavaScript extensions beside the TypeScript
-  ones, so a JavaScript file in a project is held to the same rule. A rule
+- A rule that JavaScript code can break lists the JavaScript extensions
+  too, so a JavaScript file in a project is held to the same rule. A rule
   about the project's setup names `**/package.json`, so a project without
   the file that the rule requires fails the rule instead of passing it.
 
